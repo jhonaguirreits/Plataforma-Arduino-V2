@@ -216,15 +216,15 @@ const weeks = {
 // ==============================================================
 const tiendaItems = {
   avatars: [
-    { id: 'user', icon: 'user', name: 'Estudiante', price: 0 },
-    { id: 'bot', icon: 'bot', name: 'Robo Wokwi', price: 50 },
+    { id: 'user', icon: 'user', name: 'Estudiante', price: 0, owned: true },
+    { id: 'bot', icon: 'bot', name: 'Robo ArduLabs', price: 50 },
     { id: 'rocket', icon: 'rocket', name: 'Cohete', price: 100 },
     { id: 'alien', icon: 'alien', name: 'Alien', price: 150 },
     { id: 'ghost', icon: 'ghost', name: 'Fantasma', price: 200 },
     { id: 'sword', icon: 'sword', name: 'Guerrero', price: 300 }
   ],
   themes: [
-    { id: 'blue', color: '#2f81f7', name: 'Wokwi Azul (Default)', price: 0 },
+    { id: 'blue', color: '#2f81f7', name: 'ArduLabs Azul (Default)', price: 0, owned: true },
     { id: 'green', color: '#22c55e', name: 'Hacker Matrix', price: 100 },
     { id: 'purple', color: '#a855f7', name: 'Neón Morado', price: 150 },
     { id: 'orange', color: '#f97316', name: 'Fuego Carmesí', price: 200 },
@@ -276,9 +276,9 @@ onAuthStateChanged(auth, async (user) => {
       // Los docentes secundarios van directo a su panel
       window.iniciarAppDocente();
       return;
-    } else if (rolesDoc.exists() && !rolesDoc.data().docentes.includes(user.email) && user.email !== ADMIN_EMAIL) {
-        // Si existe el doc de roles pero el email no está, no es ni admin ni docente.
-        // Podría ser un estudiante con correo de docente, lo dejamos pasar.
+    } else if (rolesDoc.exists() && !rolesDoc.data().docentes.includes(user.email) && user.email !== ADMIN_EMAIL && !esAdmin) {
+        // Si el documento de roles existe, el usuario no es el admin principal, y su correo no está en la lista de docentes,
+        // entonces es un estudiante. La ejecución continúa hacia la lógica de estudiante.
     }
 
     // ROL ESTUDIANTE
@@ -295,7 +295,7 @@ onAuthStateChanged(auth, async (user) => {
         userData.inventory = { avatars: ["user"], themes: ["blue"] };
       }
     } else {
-      let gradoIngresado = prompt("¡Bienvenido a Wokwi Academy!\nPor favor, ingresa tu grado (Ej: 10A, 11B):");
+      let gradoIngresado = prompt("¡Bienvenido a ArduLabs!\nPor favor, ingresa tu grado (Ej: 10A, 11B):");
       userData = {
         nombres: user.displayName, email: user.email, grado: gradoIngresado || "Sin Grado",
         volts: 0, monedas: 0, streak: 0, lastLogin: "",
@@ -478,7 +478,7 @@ window.exportarCSV = function() {
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
   link.setAttribute("href", url);
-  link.setAttribute("download", `Planilla_Notas_Wokwi_${filtro}_${new Date().toISOString().split('T')[0]}.csv`);
+  link.setAttribute("download", `Planilla_Notas_ArduLabs_${filtro}_${new Date().toISOString().split('T')[0]}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
@@ -713,7 +713,7 @@ function renderTiendaUI() {
 
   const avContainer = document.getElementById('store-avatars');
   avContainer.innerHTML = tiendaItems.avatars.map(item => {
-    let isOwned = userData.inventory.avatars.includes(item.id);
+    let isOwned = item.price === 0 || userData.inventory.avatars.includes(item.id);
     let isActive = userData.avatar === item.id;
     let btnHtml = isActive ? `<button class="btn-equipped">Equipado</button>` : 
                  (isOwned ? `<button class="btn-equip" onclick="window.equiparArticulo('avatar', '${item.id}')">Equipar</button>` : 
@@ -728,7 +728,7 @@ function renderTiendaUI() {
 
   const thContainer = document.getElementById('store-themes');
   thContainer.innerHTML = tiendaItems.themes.map(item => {
-    let isOwned = userData.inventory.themes.includes(item.id);
+    let isOwned = item.price === 0 || userData.inventory.themes.includes(item.id);
     let isActive = userData.theme === item.id;
     let btnHtml = isActive ? `<button class="btn-equipped" style="background:${item.color};">Equipado</button>` : 
                  (isOwned ? `<button class="btn-equip" onclick="window.equiparArticulo('theme', '${item.id}')">Equipar</button>` : 
@@ -1036,6 +1036,9 @@ window.loadWeek = function() {
     } else if (!yaReclamado) {
       tarjeta.classList.add('clickable');
       tarjeta.onclick = () => window.abrirModalTeoria(currentRetoId, nivel);
+    } else {
+      // Si ya está reclamado, no es clickable
+      tarjeta.classList.remove('clickable');
     }
 
     container.appendChild(tarjeta);
@@ -1166,9 +1169,18 @@ window.descargarDiploma = function() {
   });
 }
 
-window.onload = () => { 
+window.onload = () => {
   document.getElementById('screen-login').classList.add('active'); 
   document.getElementById('screen-app').classList.remove('active'); 
   document.getElementById('screen-teacher').classList.remove('active');
+
+  const loginScreen = document.getElementById('screen-login');
+  if (loginScreen && !document.getElementById('app-footer')) {
+    const footer = document.createElement('footer');
+    footer.id = 'app-footer';
+    footer.innerHTML = 'Diseñado por Jhon Jairo Aguirre. Derechos reservados &copy; 2024';
+    loginScreen.appendChild(footer);
+  }
+
   if (window.lucide) lucide.createIcons(); 
 };

@@ -61,6 +61,15 @@ body {
 .btn-login:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 20px var(--card-shadow); filter: brightness(1.15); }
 .error-msg { color: var(--error-color); font-size: 0.9rem; margin: 10px 0; display: none; text-align: center; font-weight: bold; }
 
+#app-footer {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
 /* PANEL DEL DOCENTE */
 .teacher-table { width: 100%; border-collapse: collapse; text-align: left; }
 .teacher-table th { padding: 12px; border-bottom: 2px solid var(--border-color); color: var(--wokwi-blue); font-weight: 600; }
