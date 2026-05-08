@@ -507,6 +507,10 @@ function iniciarAppEstudiante() {
       ? `<button class="btn-admin-mode flex-icon" onclick="window.iniciarAppDocente()" title="Modo Dios"><i data-lucide="crown"></i> Admin</button>` 
       : '';
 
+    // Añadir botones de reinicio
+    const weekControls = document.getElementById('week-controls');
+    weekControls.innerHTML = `<button class="btn-reset-week" onclick="window.reiniciarSemanaCompleta()"><i data-lucide="history"></i> Reiniciar Semana</button>`;
+
     badge.innerHTML = `<i id="header-avatar" data-lucide="${userData.avatar || 'user'}"></i> <span>${(userData.nombres || 'Admin').split(' ')[0]}</span> ${adminButton} <button class="btn-logout flex-icon" onclick="window.logout()" title="Cerrar Sesión"><i data-lucide="log-out"></i> Salir</button>`;
     
     headerButtons.appendChild(badge);
@@ -1061,6 +1065,8 @@ window.loadWeek = function() {
       const codeFinal = userData.savedCodes[`code_${currentRetoId}_${nivel}`]; const borrador = userData.drafts[`draft_${currentRetoId}_${nivel}`];
       
       if (input) { if (isDone && codeFinal) input.value = codeFinal; else if (borrador) input.value = borrador; else input.value = ""; }
+      if (input) { input.onfocus = () => iniciarTimerSiNecesario(nivel); }
+
       if (isDone) {
         doneBadge.style.display = 'flex'; evalBox.style.display = 'block'; if(btnCont) btnCont.style.display = 'none';
         if(record) { document.getElementById(`record-done-${nivel}`).style.display = 'inline-block'; document.getElementById(`record-done-${nivel}`).textContent = `⏱ Récord: ${formatTime(parseInt(record))}`; }
@@ -1074,18 +1080,23 @@ window.loadWeek = function() {
   if (window.lucide) lucide.createIcons();
 };
 
-window.resetProgress = function() {
-  if(confirm('¿Seguro que deseas reiniciar tu código? Se borrarán tus borradores no verificados de esta semana.')) {
+window.reiniciarSemanaCompleta = function() {
+  if(confirm('⚠️ ¡Atención! Esta acción es irreversible.\n\n¿Seguro que deseas reiniciar TODA la semana actual? Se borrará tu progreso, códigos, récords y teoría leída para que puedas empezar desde cero.')) {
+    if(!currentUser || !currentRetoId) return;
+
     ['basico', 'alto', 'superior'].forEach(nivel => {
+      delete userData.progress[`reto_${currentRetoId}_${nivel}`];
+      delete userData.records[`record_${currentRetoId}_${nivel}`];
+      delete userData.savedCodes[`code_${currentRetoId}_${nivel}`];
       delete userData.drafts[`draft_${currentRetoId}_${nivel}`];
-      const isDone = userData.progress[`reto_${currentRetoId}_${nivel}`] === true;
-      const input = document.getElementById(`input-${nivel}`);
-      if (input && !isDone) input.value = '';
+      delete userData.teoria[`teoria_leida_${currentRetoId}_${nivel}`];
     });
-    saveToFirebase(); window.loadWeek(); 
+
+    saveToFirebase();
+    window.loadWeek();
+    updateProgress();
   }
 }
-
 // ==============================================================
 // 13. FUNCIONES AUXILIARES (Utilidades)
 // ==============================================================
